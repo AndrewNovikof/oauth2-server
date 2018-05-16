@@ -118,6 +118,38 @@ class AuthCodeGrantTest extends TestCase
         $this->assertInstanceOf(AuthorizationRequest::class, $grant->validateAuthorizationRequest($request));
     }
 
+    public function testValidateAuthorizationSubDomainRequestRedirectUri()
+    {
+        $client = new ClientEntity();
+        $client->setRedirectUri('http://domain.foo/bar/123');
+        $clientRepositoryMock = $this->getMockBuilder(ClientRepositoryInterface::class)->getMock();
+        $clientRepositoryMock->method('getClientEntity')->willReturn($client);
+
+        $grant = new AuthCodeGrant(
+            $this->getMockBuilder(AuthCodeRepositoryInterface::class)->getMock(),
+            $this->getMockBuilder(RefreshTokenRepositoryInterface::class)->getMock(),
+            new \DateInterval('PT10M')
+        );
+        $grant->setClientRepository($clientRepositoryMock);
+
+        $request = new ServerRequest(
+            [],
+            [],
+            null,
+            null,
+            'php://input',
+            [],
+            [],
+            [
+                'response_type' => 'code',
+                'client_id'     => 'foo',
+                'redirect_uri'  => 'http://subdomain.domain.foo/bar',
+            ]
+        );
+
+        $this->assertTrue($grant->validateAuthorizationRequest($request) instanceof AuthorizationRequest);
+    }
+
     public function testValidateAuthorizationRequestRedirectUriArray()
     {
         $client = new ClientEntity();
@@ -154,6 +186,38 @@ class AuthCodeGrantTest extends TestCase
         );
 
         $this->assertInstanceOf(AuthorizationRequest::class, $grant->validateAuthorizationRequest($request));
+    }
+
+    public function testValidateAuthorizationRequestSubDomainRedirectUriArray()
+    {
+        $client = new ClientEntity();
+        $client->setRedirectUri(['http://domain.foo/bar/123']);
+        $clientRepositoryMock = $this->getMockBuilder(ClientRepositoryInterface::class)->getMock();
+        $clientRepositoryMock->method('getClientEntity')->willReturn($client);
+
+        $grant = new AuthCodeGrant(
+            $this->getMockBuilder(AuthCodeRepositoryInterface::class)->getMock(),
+            $this->getMockBuilder(RefreshTokenRepositoryInterface::class)->getMock(),
+            new \DateInterval('PT10M')
+        );
+        $grant->setClientRepository($clientRepositoryMock);
+
+        $request = new ServerRequest(
+            [],
+            [],
+            null,
+            null,
+            'php://input',
+            [],
+            [],
+            [
+                'response_type' => 'code',
+                'client_id'     => 'foo',
+                'redirect_uri'  => 'http://subdomain.domain.foo/bar',
+            ]
+        );
+
+        $this->assertTrue($grant->validateAuthorizationRequest($request) instanceof AuthorizationRequest);
     }
 
     public function testValidateAuthorizationRequestCodeChallenge()

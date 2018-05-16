@@ -153,14 +153,6 @@ abstract class AbstractGrant implements GrantTypeInterface
     }
 
     /**
-     * @param string $scope
-     */
-    public function setDefaultScope($scope)
-    {
-        $this->defaultScope = $scope;
-    }
-
-    /**
      * Validate the client.
      *
      * @param ServerRequestInterface $request
@@ -194,24 +186,72 @@ abstract class AbstractGrant implements GrantTypeInterface
         }
 
         // If a redirect URI is provided ensure it matches what is pre-registered
-        $redirectUri = $this->getRequestParameter('redirect_uri', $request, null);
+        $this->checkRedirectUri($this->getRequestParameter('redirect_uri', $request, null), $client, $request);
+
+        return $client;
+    }
+
+    /**
+     * Validate redirect Uri
+     *
+     * @param $redirectUri
+     * @param $client
+     * @param $request
+     * @throws OAuthServerException
+     */
+    public function checkRedirectUri($redirectUri, $client, $request){
         if ($redirectUri !== null) {
-            if (
-                is_string($client->getRedirectUri())
-                && (strcmp($client->getRedirectUri(), $redirectUri) !== 0)
-            ) {
-                $this->getEmitter()->emit(new RequestEvent(RequestEvent::CLIENT_AUTHENTICATION_FAILED, $request));
-                throw OAuthServerException::invalidClient();
+            if (is_string($client->getRedirectUri())) {
+                if ((strcmp($client->getRedirectUri(), $redirectUri) !== 0)) {
+                    $registered_domain = $this->getDomain($client->getRedirectUri());
+                    $requested_domain = $this->getDomain($redirectUri, count(explode('.', $registered_domain)));
+                    if ((!$registered_domain || !$requested_domain) || $registered_domain !== $requested_domain) {
+                        $this->getEmitter()->emit(new RequestEvent(RequestEvent::CLIENT_AUTHENTICATION_FAILED, $request));
+                        throw OAuthServerException::invalidClient();
+                    }
+                }
+
             } elseif (
                 is_array($client->getRedirectUri())
                 && in_array($redirectUri, $client->getRedirectUri(), true) === false
             ) {
-                $this->getEmitter()->emit(new RequestEvent(RequestEvent::CLIENT_AUTHENTICATION_FAILED, $request));
-                throw OAuthServerException::invalidClient();
+                $invalid_client = true;
+                foreach ($client->getRedirectUri() as $url) {
+                    $registered_domain = $this->getDomain($url);
+                    $requested_domain = $this->getDomain($redirectUri, count(explode('.', $registered_domain)));
+                    if (($registered_domain && $requested_domain) && $registered_domain == $requested_domain) {
+                        $invalid_client = false;
+                        break;
+                    }
+                }
+                if ($invalid_client) {
+                    $this->getEmitter()->emit(new RequestEvent(RequestEvent::CLIENT_AUTHENTICATION_FAILED, $request));
+                    throw OAuthServerException::invalidClient();
+                }
             }
         }
+    }
 
-        return $client;
+    /**
+     * Get domain from the URL
+     *
+     * @param $redirectUri
+     * @param int $sub_domain_depth (2 - domain.com, 3 - subdomain.domain.com, etc.)
+     * @return null|string
+     */
+    protected function getDomain($redirectUri, $sub_domain_depth = null)
+    {
+        try {
+            $host = parse_url($redirectUri)['host'];
+            if ($sub_domain_depth) {
+                $url_array = explode('.', $host);
+                array_splice($url_array, 0, -$sub_domain_depth);
+                $host = implode(".", $url_array);
+            }
+            return $host;
+        } catch (\Exception $exception) {
+            return null;
+        }
     }
 
     /**
