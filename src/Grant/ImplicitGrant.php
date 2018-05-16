@@ -42,6 +42,16 @@ class ImplicitGrant extends AbstractAuthorizeGrant
     }
 
     /**
+     * Set the default scope.
+     *
+     * @param string $scope
+     */
+    public function setDefaultScope($scope)
+    {
+        $this->defaultScope = $scope;
+    }
+
+    /**
      * @param \DateInterval $refreshTokenTTL
      *
      * @throw \LogicException

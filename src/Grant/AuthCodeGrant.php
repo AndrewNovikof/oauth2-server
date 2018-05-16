@@ -29,6 +29,16 @@ class AuthCodeGrant extends AbstractAuthorizeGrant
     private $authCodeTTL;
 
     /**
+     * Set the default scope.
+     *
+     * @param string $scope
+     */
+    public function setDefaultScope($scope)
+    {
+        $this->defaultScope = $scope;
+    }
+
+    /**
      * @var bool
      */
     private $enableCodeExchangeProof = false;

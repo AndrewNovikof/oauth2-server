@@ -54,4 +54,14 @@ class ClientCredentialsGrant extends AbstractGrant
     {
         return 'client_credentials';
     }
+
+    /**
+     * Set the default scope.
+     *
+     * @param string $scope
+     */
+    public function setDefaultScope($scope)
+    {
+        $this->defaultScope = $scope;
+    }
 }

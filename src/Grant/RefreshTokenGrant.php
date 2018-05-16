@@ -23,6 +23,16 @@ use Psr\Http\Message\ServerRequestInterface;
 class RefreshTokenGrant extends AbstractGrant
 {
     /**
+     * Set the default scope.
+     *
+     * @param string $scope
+     */
+    public function setDefaultScope($scope)
+    {
+        $this->defaultScope = $scope;
+    }
+
+    /**
      * @param RefreshTokenRepositoryInterface $refreshTokenRepository
      */
     public function __construct(RefreshTokenRepositoryInterface $refreshTokenRepository)

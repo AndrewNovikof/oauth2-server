@@ -26,6 +26,16 @@ use Psr\Http\Message\ServerRequestInterface;
 class PasswordGrant extends AbstractGrant
 {
     /**
+     * Set the default scope.
+     *
+     * @param string $scope
+     */
+    public function setDefaultScope($scope)
+    {
+        $this->defaultScope = $scope;
+    }
+
+    /**
      * @param UserRepositoryInterface         $userRepository
      * @param RefreshTokenRepositoryInterface $refreshTokenRepository
      */
